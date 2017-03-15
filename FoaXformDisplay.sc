@@ -20,7 +20,7 @@ FoaXformDisplay {
 	var <chain, <displayChain, <xfViewChains, displayXFormView;
 
 	// GUI layout - vars used by FoaXformView need getters
-	var scrnB, sfWin, winW, winH, uv, tv, ctlv, matrixButtonLayout, <codeWin;
+	var scrnB, sfWin, winW, winH, uv, pv, tv, ctlv, matrixButtonLayout, <codeWin;
 	var xfWin, <chainViews, lastUpdatedMatrix, dirDisplay, <evalTxtView;
 	var <xfMargins, <addRmvMargins, <chainViewWidth, <chainViewHeight, xfHeight, chTitleHeight, xfIDwidth;
 	var <idTxtColor, <idTabColor, <xfColor, <ctlColor, <colorStep, chainColor, baseColor;
@@ -293,6 +293,9 @@ FoaXformDisplay {
 	prDefineDrawSoundfield {
 		var gainThresh, alphaSpec, gainSpec, colorSpec;
 		var getColor, elWarp;
+		var arcH; // shared by uv and pv
+		// for planewave arrow
+		var rH, rW, w_2, w_2neg, w_4, h_2, h_4, h_34, whRatio=0.75;
 
 		// below this thresh, the point isn't displayed
 		gainThresh = -90;
@@ -303,7 +306,7 @@ FoaXformDisplay {
 
 		// warp lower hemisphere toward the origin as points move "down"
 		// elWarp = Env([-pi/2,0,pi/2],[pi/2,pi/2], [-3,0]);
-		elWarp = Env([0.25,1, 1.25],[pi/2, pi/2], 2); // 0>1 scalar
+		elWarp = Env([0.25,1, 4],[pi/2, pi/2], 2); // 0>1 scalar
 
 		// algorithmic rainbow color scheme
 		getColor = { |gain|
@@ -320,13 +323,13 @@ FoaXformDisplay {
 		/* Drawing the soundfield transform */
 
 		uv.drawFunc_({ |view|
-			var minDim, r, d, cen, arcH, circleViewRatio;
-			var maxMinStr, testSigPnt, azLineClr;
+			var minDim, r, d, cen, circleViewRatio;
+			var maxMinStr, azLineClr;
 			var azPnt, drawPnt, omniRad, omniDiam, fullOmni, gainColor, gainPnt;
 			var az, el, dir, gain, aeds_sortOrder, thisElWarp;
 			var inspWidth, inspHeight, inspInset, inspRect;
 			var gainWidth, gainHeight, gainRect, minRect, maxRect;
-			var amps;
+			var amps, rect, col;
 
 			minDim = min(uv.bounds.width, uv.bounds.height);
 
@@ -353,42 +356,6 @@ FoaXformDisplay {
 					arcH*2*val, arcH*2*val
 				));
 			};
-
-			// draw test signal planewave annular wedge
-			if( pwPlaying, {
-				var pwSpacingRatio = 0.1, spacing, rectWidth, rectHeight, offset;
-
-				testSigPnt = Polar( 1.1, 0 ).asPoint * arcH;
-				rectWidth = arcH * 12;
-				rectHeight = arcH * pwSpacingRatio;
-				spacing = arcH * pwSpacingRatio;
-				offset = testSigPnt.y - rectHeight.half - arcH + 2;
-
-				Pen.push;
-				Pen.rotate( pwAzim.neg );
-
-				10.do{ |i|
-					var rect, alpha;
-					// width of "soundwaves" as ratio of arcH
-					rect = Rect(
-						rectWidth.half.neg,
-						offset - (spacing * (i+1)),
-						rectWidth,
-						rectHeight
-					);
-					Pen.addRect( rect );
-
-					alpha = (i+1/5).fold(0.3, 1);
-
-					Pen.fillAxialGradient(
-						rect.bounds.leftTop, rect.bounds.leftBottom,
-						i.even.if({ Color.gray.alpha_(alpha) },{ Color.black }),
-						i.odd.if({ Color.gray.alpha_(alpha) },{ Color.black })
-					);
-				};
-
-				Pen.pop;
-			});
 
 			// line from center to point
 			azLineClr = Color.gray.alpha_(0.2);
@@ -492,9 +459,12 @@ FoaXformDisplay {
 			drawPnt = azPnt * cos(el) * thisElWarp;
 			drawPnt = drawPnt * dir;
 
-			Pen.strokeColor = Color.fromHexString("#CC0000");
-			Pen.width = 2;
-			Pen.strokeOval( Rect(drawPnt.x-pointRad, drawPnt.y-pointRad, d, d) );
+			col = Color.fromHexString("#CC0000");
+			rect = Rect(drawPnt.x-pointRad, drawPnt.y-pointRad, d, d);
+			Pen.strokeColor = col;
+			Pen.width = 1;
+			Pen.strokeOval(rect);
+			Pen.stringCenteredIn("F", rect, color: col);
 
 
 			Pen.translate(view.bounds.center.x.neg, view.bounds.center.y.neg);
@@ -573,6 +543,7 @@ FoaXformDisplay {
 					Font("Helvetica", 12);, Color.yellow
 				);
 			};
+			pv.refresh; // refresh planewave view
 		});
 
 		// define mouse click - select the nearest point under threshold, display its stats
@@ -601,6 +572,46 @@ FoaXformDisplay {
 
 			// update the display
 			uv.refresh;
+		});
+
+
+		// Planewave view: draw the planewave arrow
+		pv = UserView(uv, Rect(0, 0, uv.bounds.width, uv.bounds.height))
+		.resize_(5)
+		.drawFunc_({ |view|
+			// draw test signal planewave
+			if( pwPlaying, {
+				rH = arcH * 0.2; // rect height as a ratio of arcH
+				rW = rH * whRatio;
+				w_2 = rW * 0.5;
+				w_4 = rW * 0.25;
+				w_2neg = rW * -0.5;
+				h_2 = rH * 0.5;
+				h_4 = rH * 0.25;
+				h_34= rH * 0.75;
+
+				Pen.translate(view.bounds.center.x, view.bounds.center.y);
+				Pen.rotate( pwAzim.neg - 0.5pi );
+				Pen.translate(1.1 * arcH, 0); // tip of the arrow
+				// drawing as if from 3 o'clock point pointing left
+				// arrow head
+				Pen.lineTo(h_4@w_4);
+				Pen.lineTo(h_4@w_4.neg);
+				Pen.lineTo(0@0);
+				// arrow shaft
+				Pen.moveTo(h_4@0);
+				Pen.lineTo(rH@0);
+				// planewaves
+				Pen.moveTo(rH@w_2);
+				Pen.lineTo(rH@w_2neg);
+				Pen.moveTo(h_34@w_2);
+				Pen.lineTo(h_34@w_2neg);
+				Pen.moveTo(h_2@w_2);
+				Pen.lineTo(h_2@w_2neg);
+
+				Pen.strokeColor_(Color(*(0.8!3)));
+				Pen.stroke;
+			});
 		});
 
 		// Transform View - overlays the User View
@@ -1060,7 +1071,8 @@ FoaXformDisplay {
 					{ pwAzim = state };
 
 					// TODO: give panning planewave its own view so only it is redrawn here
-					defer{ uv.refresh };
+					// defer{ uv.refresh };
+					defer{ pv.refresh };
 				},
 				\pwSynthRunning, {
 					pwPlaying = args[0];
