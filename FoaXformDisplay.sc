@@ -1040,6 +1040,18 @@ FoaXformDisplay {
 					xfViewChains[whichChain][index].rebuildControls;
 					this.prUpdateMatrix( 'chain' );
 				},
+				\transformMuted, {
+					var whichChain, index, bool;
+					#whichChain, index, bool = args[0..2];
+					// update UI with muted state
+					this.prUpdateMatrix( 'chain' );
+				},
+				\transformSoloed, {
+					var whichChain, index, bool;
+					#whichChain, index, bool = args[0..2];
+					// update UI with soloed state
+					this.prUpdateMatrix( 'chain' );
+				},
 				\paramUpdated, {
 					this.prUpdateMatrix( 'chain' );
 				}
