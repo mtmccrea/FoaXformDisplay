@@ -5,7 +5,7 @@ FoaXformView {
 	var sfView, target, <initChainDex, <initDex;
 	var <>view, <>layout, <>labelTxt, <>name, <>mtx;
 	var <ctlLayout, <addRmvLayout, <xFormMenu;
-	var <inputMenu, <chain;
+	var <inputMenu, <chain, colorsMuted=false;
 
 
 	*new { |sfView, target = 'chain', chainDex, index|
@@ -19,8 +19,8 @@ FoaXformView {
 		sfView.debug.if{ "initializing new XForm".postln; };
 
 		chain = switch( target,
-			'chain',	{ sfView.chain },
-			'display',	{ sfView.displayChain }
+			'chain',	{ sfView.chain },						// xform in chain view UI
+			'display',	{ sfView.displayChain } 	// or xform view in the xformDisplay UI
 		);
 
 		// if this xform takes a chain index for an input,
@@ -291,11 +291,46 @@ FoaXformView {
 		addRmvLayout.add( lay );
 	}
 
-
 	getViewIndex {
 		^switch( target,
 			'chain', 	{ sfView.prGetXfViewID( this ) },
 			'display',	{ [ 0, 1 ] }
 		);
+	}
+
+	// set the internal views to "muted" colors
+	// used by both mute and solo functions
+	muteColors { |bool=true|
+		var hueFac, valFac, colFunc;
+		var chDex, dex;
+
+		if (colorsMuted == bool) {^this}; // state matches, return
+		if (bool) {
+			hueFac = 0.5;
+			valFac = 0.5;
+		} {
+			hueFac = 2;
+			valFac = 2;
+		};
+		colFunc = {|v|
+			var col, newCol;
+			col = try {v.background}{^this}; // return if view doesn't respond to .background
+			col.notNil.if{
+				newCol = Color.hsv(*col.asHSV*[1,hueFac,valFac,1]);
+				v.background = newCol;
+			};
+		};
+		this.prFindKindDo(this.view, View, colFunc);
+		colFunc.(this.view); // change the topmost view as well
+		colorsMuted = bool;
+	}
+
+	prFindKindDo { |view, kind, performFunc|
+		view.children.do{|child|
+			child.isKindOf(View).if{
+				this.prFindKindDo(child, kind, performFunc)   // call self
+			};
+			child.isKindOf(kind).if{ performFunc.(child) };
+		}
 	}
 }

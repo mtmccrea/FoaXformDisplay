@@ -81,7 +81,6 @@ FoaXformDisplay {
 		this.initDisplayGUI;
 	}
 
-
 	prDefineColors {
 		baseColor = Color.hsv( // Color.newHex("BA690B").asHSV;
 			0.08952380952381, 0.94086021505376, 0.72941176470588, 1 );
@@ -1043,14 +1042,36 @@ FoaXformDisplay {
 				\transformMuted, {
 					var whichChain, index, bool;
 					#whichChain, index, bool = args[0..2];
-					// update UI with muted state
 					this.prUpdateMatrix( 'chain' );
+					xfViewChains[whichChain][index].muteColors(bool); // update UI with muted state
 				},
 				\transformSoloed, {
-					var whichChain, index, bool;
+					var whichChain, index, bool, unmuting, chainDex;
 					#whichChain, index, bool = args[0..2];
-					// update UI with soloed state
 					this.prUpdateMatrix( 'chain' );
+					unmuting = bool.not;
+					// mute the colors of the UI for every link after this one
+					xfViewChains[whichChain..].do{ |vchain,i|
+						chainDex = whichChain + i;
+						vchain.do{ |xfv, j|
+							if (i==0) {
+								if (
+									(j>index) and:
+										(bool or:
+											(unmuting and:
+												chain.chains[chainDex][j].muted.not // don't unmute colors if xform state is .muted
+											)
+										)
+								) {
+									xfv.muteColors(bool)
+								}
+							} {
+								if (bool or: (unmuting and: chain.chains[chainDex][j].muted.not)) { // don't unmute colors if xform state is .muted
+									xfv.muteColors(bool)
+								}
+							}
+						}
+					};
 				},
 				\paramUpdated, {
 					this.prUpdateMatrix( 'chain' );
