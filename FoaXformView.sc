@@ -370,15 +370,15 @@ FoaXformView {
 			var col, newCol;
 			col = try {v.background}{^this}; // return if view doesn't respond to .background
 			col.notNil.if{
-				"trying ".post;
-				newCol = Color.hsv(
-					*col.asHSV.round(0.01)*[1,satFac,valFac,1] // round to avoid accumulating error over many un/mutes
-				);
-				v.background = newCol.postln;
+				(col.alpha != 0).if{
+					newCol = Color.hsv(
+						*col.asHSV.round(0.01)*[1,satFac,valFac,1] // round to avoid accumulating error over many un/mutes
+					);
+					v.background = newCol;
+				}
 			};
 		};
 		this.prFindKindDo(this.view, View, colFunc);
-		"col updated\n".postln;
 		colFunc.(this.view); // change the topmost view as well
 		colorsMuted = darken;
 	}
