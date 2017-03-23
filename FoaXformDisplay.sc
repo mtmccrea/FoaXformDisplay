@@ -1043,13 +1043,39 @@ FoaXformDisplay {
 					var whichChain, index, bool;
 					#whichChain, index, bool = args[0..2];
 					this.prUpdateMatrix( 'chain' );
-					xfViewChains[whichChain][index].muteColors(bool); // update UI with muted state
+					xfViewChains[whichChain][index].muteState(bool); // update UI with muted state
+
+					/*// if another xf is soloed, re-perform the solo
+					// in case this un-mute changes its color
+					// downstream from a soloed xf
+					block {|break|
+						xfViewChains[..whichChain].do{|vchain,i|
+							if (i<whichChain) {
+								vchain.do{|xfv,j|
+									chain.chains[i][j].soloed.if{
+										this.changed(\transformSoloed,i,j);
+										"caught it1".postln;
+										break.();
+									}
+								}
+							} {
+								vchain[..index].do{|xfv,j|
+									chain.chains[i][j].soloed.if{
+										this.changed(\transformSoloed,i,j);
+										"caught it2".postln;
+										break.();
+									}
+								}
+							}
+						}
+					}*/
 				},
 				\transformSoloed, {
 					var whichChain, index, bool, unmuting, chainDex;
 					#whichChain, index, bool = args[0..2];
 					this.prUpdateMatrix( 'chain' );
 					unmuting = bool.not;
+					xfViewChains[whichChain][index].soloState(bool); // update UI with soloed state
 					// mute the colors of the UI for every link after this one
 					xfViewChains[whichChain..].do{ |vchain,i|
 						chainDex = whichChain + i;
@@ -1063,11 +1089,11 @@ FoaXformDisplay {
 											)
 										)
 								) {
-									xfv.muteColors(bool)
+									xfv.updateStateColors(bool)
 								}
 							} {
 								if (bool or: (unmuting and: chain.chains[chainDex][j].muted.not)) { // don't unmute colors if xform state is .muted
-									xfv.muteColors(bool)
+									xfv.updateStateColors(bool)
 								}
 							}
 						}
