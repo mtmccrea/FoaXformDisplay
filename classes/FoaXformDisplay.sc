@@ -5,11 +5,9 @@ x = FoaXformDisplay(12)
 // TODO
 // draw elevation labels
 // have option to view elevation angles on proto points (before/after)
-// -- or further, be able to select individual points, which would then display original proto az/el/amp and post-transform az/el/amp
 // add arg to *new for an initialized transform
 // refactor drawing - make use of push/pop with rotate
-// make planewave representation lines not arcs, with direction arrow
-// consider ability to envelope paramters
+// ability to envelope paramters
 
 // add mercator-style map for display
 
@@ -60,6 +58,7 @@ FoaXformDisplay {
 		prePostStats = numPoints.collect{ |i|
 			IdentityDictionary(know: true).putPairs([
 				\inAz, directions[i],
+				\inEl, 0,
 				\az, nil, \el, nil, \dir, nil, \ampdb, nil,
 				\scrnPnt, nil // point in userview
 			]);
@@ -453,14 +452,14 @@ FoaXformDisplay {
 			omniRad= omniDiam/2;
 
 			azPnt = Point(cos(az), sin(az)) // = Polar(dir, az).asPoint
-			.rotate(pi/2)	// convert ambi to screen coords
-			* Point(1,-1)	// flip Y for drawing
-			* arcH;			// scale normalized points to arcH
+			.rotate(pi/2)    // convert ambi to screen coords
+			* Point(1,-1)    // flip Y for drawing
+			* arcH;          // scale normalized points to arcH
 			drawPnt = azPnt * cos(el) * thisElWarp;
 			drawPnt = drawPnt * dir;
 
 			col = Color.fromHexString("#CC0000");
-			rect = Rect(drawPnt.x-pointRad, drawPnt.y-pointRad, d, d);
+            rect = Rect(0,0,d*2,d*2).center_(drawPnt);
 			Pen.strokeColor = col;
 			Pen.width = 1;
 			Pen.strokeOval(rect);
@@ -522,26 +521,27 @@ FoaXformDisplay {
 				Pen.width = 2;
 				Pen.strokeRect(inspRect);
 
-				Pen.stringCenteredIn(
-					format(
-						"Azimuth\npre: %˚\n\nElevation\n\nDirectivity\n\nGain\n",
-						selStats.inAz.raddeg.wrap(0,360).round(0.1), // input azimuth degree
-					),
-					inspRect,
-					Font("Helvetica", 12), ctlColor);
+                Pen.stringCenteredIn(
+                    "Azimuth\n\nElevation\n\nDirectivity\n\nGain\n",
+                    inspRect,
+                    Font("Helvetica", 12),
+                    ctlColor
+                );
 
-				Pen.stringCenteredIn(
-					format(
-						"\n\n\npost: %˚\n\n%˚\n\n%\n\n% dB\n",
-						selStats.az.raddeg.wrap(0,360.0).round(0.1),	// output azimuth degree
-						selStats.el.raddeg.fold(-90, 90.0).round(0.1),	// output elevation degree
-
-						selStats.dir.round(0.01),  // directivity
-						selStats.ampdb.round(0.1), // gain
-					),
-					inspRect,
-					Font("Helvetica", 12);, Color.yellow
-				);
+                Pen.stringCenteredIn(
+                    format(
+                        "\n\n%˚ / %˚\n\n%˚ / %˚\n\n%\n\n% dB\n",
+                        selStats.inAz.raddeg.wrap(0,360).round(0.1),    // input azimuth degree
+                        selStats.az.raddeg.wrap(0,360.0).round(0.1),    // output azimuth degree
+                        selStats.inEl.raddeg.fold(-90, 90.0).round(0.1),// input elevation degree
+                        selStats.el.raddeg.fold(-90, 90.0).round(0.1),  // output elevation degree
+                        selStats.dir.round(0.01),                       // directivity
+                        selStats.ampdb.round(0.1),                      // gain
+                    ),
+                    inspRect,
+                    Font("Helvetica", 12),
+                    Color.yellow
+                );
 			};
 			pv.refresh; // refresh planewave view
 		});
@@ -552,23 +552,15 @@ FoaXformDisplay {
 
 			newCursorPnt = (x@y - uvw.bounds.center);
 
-			#x, y = [newCursorPnt.x, newCursorPnt.y];		// translate cursor coords to origin
+            #x, y = [newCursorPnt.x, newCursorPnt.y];   // translate cursor coords to origin
 
 			distances = prePostStats.collect({ |statdict|
-				// postf("comparing point %,% with mouse at %, dist %\n",
-				// 	statdict.scrnPnt.x.round, statdict.scrnPnt.y.round,
-				// x@y.neg, statdict.scrnPnt.dist( x@y.neg ).round );
-				// statdict.keysValuesDo{|k,v| postf("\t %, %\n", k,v.round(0.01)) };
 				statdict.scrnPnt.dist( x@y );
 			});
 
 			// select the closest point to mouse click
 			// no match sets to nil
 			selectedDex = distances.detectIndex( _ < ( pointRad +1 ) );
-
-			// if( selectedDex.notNil ) {
-			// 	postf("found a match at index %, point %\n", selectedDex, prePostStats[selectedDex].scrnPnt);
-			// } { selectedDex = nil; "No point selected".postln; };
 
 			// update the display
 			uv.refresh;
@@ -734,8 +726,9 @@ FoaXformDisplay {
 	}
 
 	removeChainView { |rmvDex|
-		{
+		fork({
 			var newSize = 0, width;
+
 			// collect view widths before removing
 			width = chainViews[0].bounds.width;
 
@@ -753,7 +746,7 @@ FoaXformDisplay {
 			this.prUpdateChainTitles;
 			this.prUpdateChainIdLabels;
 			this.prUpdateInputMenus;
-		}.fork(clock:AppClock)
+		}, AppClock )
 	}
 
 	prUpdateChainTitles {
@@ -772,7 +765,6 @@ FoaXformDisplay {
 	// handles the switching between the matrix in the display,
 	// and the matrix in the transform chain, depending on the last touched
 	curXformMatrix {
-
 		^case
 		{ lastUpdatedMatrix === 'chain' }{ chain.curXformMatrix }
 		{ lastUpdatedMatrix === 'display' }{ displayChain.curXformMatrix }
@@ -1076,7 +1068,8 @@ FoaXformDisplay {
 					this.prUpdateMatrix('chain');
 					unmuting = bool.not;
 					xfViewChains[whichChain][index].soloState(bool); // update UI with soloed state
-					// mute the colors of the UI for every link after this one
+
+                    // mute the colors of the UI for every link after this one
 					xfViewChains[whichChain..].do{ |vchain,i|
 						chainDex = whichChain + i;
 						vchain.do{ |xfv, j|
@@ -1128,9 +1121,6 @@ FoaXformDisplay {
 					if( state == false )
 					{ pwPlaying = false }
 					{ pwAzim = state };
-
-					// TODO: give panning planewave its own view so only it is redrawn here
-					// defer{ uv.refresh };
 					defer{ pv.refresh };
 				},
 				\pwSynthRunning, {
