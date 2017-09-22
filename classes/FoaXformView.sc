@@ -38,7 +38,8 @@ FoaXformView {
 			*sfView.ctlColor.asHSV.put(0,
 				(sfView.ctlColor.asHSV[0] + (initChainDex * sfView.colorStep)).fold(0,1)))
 		)
-		.fixedHeight_(80)
+		// .fixedHeight_(80)
+		.maxHeight_(110)
 		.minWidth_(sfView.chainViewWidth)
 		.layout_(layout)
 		;
@@ -50,14 +51,11 @@ FoaXformView {
 				(sfView.idTxtColor.asHSV[0] + (initChainDex * sfView.colorStep)).fold(0,1))))
 		.align_(\center);
 
-		// id, "X", "+" layout
-		addRmvLayout = VLayout().margins_(sfView.addRmvMargins);
-
 		// transform controls layout
 		ctlLayout = VLayout();
 		layout.add(ctlLayout);
 		// this allows the ctlLayout to move all the way left
-		if (target == 'chain') {layout.add(nil)};
+        if (target == 'chain') {layout.add(1)};
 
 		name = chain.chains[initChainDex][initDex].name;
 
@@ -132,7 +130,8 @@ FoaXformView {
 		sfView.debug.if{postf("rebuilding controls: %\n", name)};
 
 		// clear the view's elements
-		view.children.do(_.remove);
+		view.removeAll;
+		ctlLayout.children.do(_.destroy);
 
 		if(target == 'chain', {this.addAddRmvButs});
 
@@ -182,7 +181,8 @@ FoaXformView {
 
 		dropLayout = HLayout(
 			StaticText().string_(xfname.asString).align_('left'),
-			menu
+            [menu, a: \left],
+            nil
 		);
 		ctlLayout.add(dropLayout);
 
@@ -233,10 +233,14 @@ FoaXformView {
 		.step_(0.01).minDecimals_(3);
 
 		unitTxt = StaticText().string_(spec.units)
-		.align_('left').minWidth_(20).maxWidth_(20);
+		.align_('left')
+		.fixedWidth_(20)
+		;
 
 		nameTxt = StaticText().string_(ctlName.asString)
-		.align_('left').minWidth_(50);
+		.align_('center')
+        .fixedWidth_(65)
+        ;
 
 		slLayout =  HLayout();
 
@@ -249,14 +253,19 @@ FoaXformView {
 	addAddRmvButs { |includeRmv = true|
 		var ht = 20, wth = 20, addRmvView, addBut, rmvBut, lay;
 
+		// id, "X", "+" layout
+		addRmvLayout = VLayout().margins_(sfView.addRmvMargins);
+
 		addRmvView = View().layout_(addRmvLayout)
 		.fixedWidth_(50)
 		.background_(Color.hsv(
 			*sfView.idTabColor.asHSV.put(0,
 				(sfView.idTabColor.asHSV[0] + (initChainDex * sfView.colorStep)).fold(0,1)))
-		);
+		)
+		;
 
-		view.layout.insert(addRmvView, align: \left);
+
+		view.layout.insert(addRmvView, align: \topLeft);
 
 		rmvBut = Button()
 		.states_([[ "X" ]]).maxHeight_(ht).maxWidth_(wth)
@@ -278,7 +287,7 @@ FoaXformView {
 
 		muteBut = StaticText().string_("M")
 		.stringColor_(Color.gray)
-		.minWidth_(25).align_(\center)
+		.minWidth_(20).align_(\center)
 		.mouseUpAction_({
 			var myChain, myID, muteState;
 			#myChain, myID = sfView.prGetXfViewID(this);
@@ -288,7 +297,7 @@ FoaXformView {
 
 		soloBut = StaticText().string_("S")
 		.stringColor_(Color.gray)
-		.minWidth_(25).align_(\center)
+		.minWidth_(20).align_(\center)
 		.mouseUpAction_({
 			var myChain, myID, soloState;
 			#myChain, myID = sfView.prGetXfViewID(this);
@@ -299,20 +308,21 @@ FoaXformView {
 
 		lay = if(includeRmv){
 			VLayout(
-				[labelTxt,	a: 'bottom'],
+				[labelTxt,	a: 'top'],
 				HLayout(
-					[rmvBut,	a: 'center'],
-					[muteBut,	a: 'center'],
+					[muteBut,	a: 'left'],
+					[soloBut,	a: 'right'],
 				),
+				400, // force it to grow to enclosing view's max height
 				HLayout(
-					[addBut,	a: 'center'],
-					[soloBut,	a: 'center'],
+					[rmvBut,	a: 'left'],
+					[addBut,	a: 'right'],
 				)
 			)
 		}{
 			VLayout(
 				[labelTxt,	a: 'top'],
-				300, // force it to fill the height of the view
+				15, // force it to grow the height of the view
 				[addBut,	a: 'bottom']
 			)
 		};
@@ -332,8 +342,8 @@ FoaXformView {
 	muteState { |bool|
 		this.updateStateColors(bool);
 		if (bool) {
-			muteBut.stringColor_(Color.red);
-			muteBut.background_(Color.gray);
+			muteBut.stringColor_(Color.white);
+			muteBut.background_(Color.red);
 		} {
 			muteBut.stringColor_(Color.gray);
 			muteBut.background_(Color.clear);
@@ -343,8 +353,8 @@ FoaXformView {
 	soloState { |bool|
 		/*this.updateStateColors(bool);*/
 		if (bool) {
-			soloBut.stringColor_(Color.yellow);
-			soloBut.background_(Color.gray);
+			soloBut.stringColor_(Color.white);
+			soloBut.background_(Color.yellow);
 		} {
 			soloBut.stringColor_(Color.gray);
 			soloBut.background_(Color.clear);
