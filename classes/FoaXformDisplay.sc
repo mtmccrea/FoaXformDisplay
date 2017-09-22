@@ -39,7 +39,7 @@ FoaXformDisplay {
 
 		xfMargins =			[5,3,5,3];
 		xfHeight = 			80;
-		chainViewWidth =	350;
+		chainViewWidth =	500;
 		chainViewHeight = 	200;
 		chTitleHeight =		40;
 		addRmvMargins =		[4,2,4,2];
@@ -286,6 +286,7 @@ FoaXformDisplay {
 		// been initialized so this GUI won't catch it's this.changed notifications
 		this.createNewXForm( 0, 0 );
 		this.createNewXForm( 0, 1 );
+		chainViews[0].layout.add(nil); // pad end with nil so xforms anchored to top
 	}
 
 
