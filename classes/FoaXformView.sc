@@ -112,7 +112,9 @@ FoaXformView {
 		})
 		.maxWidth_(125).minWidth_(95).value_(0);
 
-		ctlLayout.add(xFormMenu, align: \left);
+		ctlLayout.add(
+            HLayout([xFormMenu, a: \topLeft], nil).margins_(0);
+        );
 
 		if(selectedName != 'mute') {
 			// update with the current transform selection
