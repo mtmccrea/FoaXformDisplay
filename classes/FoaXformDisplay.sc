@@ -757,13 +757,12 @@ FoaXformDisplay {
 	}
 
 	prUpdateChainTitles {
-		// chainViews[1].children[0].children
 		chainViews.do{ |chv, i|
 			var titleView;
 			titleView = chv.children[0];
 			// find the StaticText
 			titleView.children.do{ |child|
-				child.isKindOf( QStaticText ).if{
+				child.isKindOf( StaticText ).if{
 					child.string_( format("Chain %", FoaMatrixChain.abcs[i]) );
 				}
 			}
