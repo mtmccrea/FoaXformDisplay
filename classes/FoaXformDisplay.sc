@@ -1,15 +1,3 @@
-/*
-x = FoaXformDisplay(12)
-*/
-
-// TODO
-// draw elevation labels
-// have option to view elevation angles on proto points (before/after)
-// add arg to *new for an initialized transform
-// refactor drawing - make use of push/pop with rotate
-// ability to envelope paramters
-
-// add mercator-style map for display
 
 FoaXformDisplay {
     // copyArgs
