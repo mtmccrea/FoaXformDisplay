@@ -20,12 +20,17 @@ incoming planewaves spaced evenly around the horizontal plane.
 
 INSTANCEMETHODS::
 
+METHOD:: chain
+Returns the current link::Classes/FoaMatrixChain::, the output of which is displayed.
+
+METHOD:: curXformMatrix
+Returns the resultant link::Classes/Matrix:: from the transform chain.
 
 METHOD:: free
 Clean up the windows and free resources on the server.
 
 
-PRIVATE:: addChainView, addRmvMargins, alignRows, chainViewHeight, chainViewWidth, chainViews, codeWin, colorStep, createNewXForm, ctlColor, debug, displayChain, evalTxtView, iOpenedAudition, idTabColor, idTxtColor, initChainGui, initDisplayGUI, prDefineColors, prDefineDrawSoundfield, prGetChainViewID, prGetInputList, prGetXfViewID, prInit, prRemoveXForm, prUpdateChainIdLabels, prUpdateChainTitles, prUpdateInputMenus, prUpdateMatrix, prePostStats, pwAzim, pwPlaying, removeChainView, setAudition, showMatrixWindow, update, xfColor, xfMargins, xfViewChains
+PRIVATE:: addChainView, addRmvMargins, alignRows, chainViewHeight, chainViewWidth, chainViews, codeWin, colorStep, createNewXForm, ctlColor, debug, displayChain, evalTxtView, iOpenedAudition, idTabColor, idTxtColor, initChainGui, initDisplayGUI, prDefineColors, prDefineDrawSoundfield, prGetChainViewID, prGetInputList, prGetXfViewID, prInit, prRemoveXForm, prUpdateChainIdLabels, prUpdateChainTitles, prUpdateInputMenus, prUpdateMatrix, prePostStats, pwAzim, pwPlaying, removeChainView, setAudition, showMatrixWindow, update, xfColor, xfMargins, xfViewChains, audition
 
 section:: Understanding the Transform Display
 The transform display shows points which represent incoming planewaves from many
